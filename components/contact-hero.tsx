@@ -1,3 +1,4 @@
+"use client"
 import { Badge } from "@/components/ui/badge"
 import { MessageCircle, Calendar, Mail, Phone } from "lucide-react"
 
@@ -22,24 +23,32 @@ export function ContactHero() {
             Let's Build Something Amazing Together
           </h1>
           <p className="text-lg text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-            Ready to transform your data challenges into competitive advantages? Whether you're a startup in Lagos, a
-            government agency in Nairobi, or a diaspora investor in London, we're here to help you succeed.
+            Ready to transform your data challenges into competitive advantages? Whether you're a startup, a
+            government agency, or a diaspora investor, we're here to help you succeed.
           </p>
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-          {contactMethods.map((method, index) => (
-            <div
-              key={index}
-              className="bg-card border border-border rounded-lg p-6 text-center hover:shadow-lg transition-shadow"
-            >
-              <div className="bg-primary/10 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-4">
-                <method.icon className="h-6 w-6 text-primary" />
+          {contactMethods.map((method, index) => {
+            // Make Live Chat card clickable to trigger AI assistant
+            const isLiveChat = method.label === "Live Chat";
+            return (
+              <div
+                key={index}
+                className={`bg-card border border-border rounded-lg p-6 text-center hover:shadow-lg transition-shadow ${isLiveChat ? 'cursor-pointer' : ''}`}
+                onClick={isLiveChat ? () => {
+                  const aiButton = document.querySelector('[data-ai-assistant-trigger]');
+                  if (aiButton) (aiButton as HTMLButtonElement).click();
+                } : undefined}
+              >
+                <div className="bg-primary/10 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-4">
+                  <method.icon className="h-6 w-6 text-primary" />
+                </div>
+                <div className="font-semibold text-foreground mb-1">{method.label}</div>
+                <div className="text-sm text-muted-foreground">{method.description}</div>
               </div>
-              <div className="font-semibold text-foreground mb-1">{method.label}</div>
-              <div className="text-sm text-muted-foreground">{method.description}</div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>

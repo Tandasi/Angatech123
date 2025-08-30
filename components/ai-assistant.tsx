@@ -24,7 +24,6 @@ export function AIAssistant() {
     "What's the best stack for my project?",
     "How much does a dashboard cost?",
     "Do you work with startups?",
-    "What's your experience in Nigeria?",
     "Can you integrate with our existing systems?",
   ]
 
@@ -60,7 +59,7 @@ export function AIAssistant() {
   return (
     <>
       {/* Floating Assistant Button */}
-  <div className="fixed bottom-6 right-6 z-50">
+  <div className="fixed bottom-2 right-2 z-20">
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
             <Button
@@ -69,7 +68,7 @@ export function AIAssistant() {
               data-ai-assistant-trigger
             >
               <Bot className="h-5 w-5 mr-2" />
-              Ask AI Assistant
+              Ask me
               <Sparkles className="h-4 w-4 ml-2" />
             </Button>
           </DialogTrigger>
