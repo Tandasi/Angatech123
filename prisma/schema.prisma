@@ -1,0 +1,146 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model ContactSubmission {
+  id                String   @id @default(uuid())
+  firstName         String
+  lastName          String
+  email             String
+  phone             String?
+  company           String?
+  serviceCategory   String?
+  projectType       String
+  budget            String?
+  timeline          String?
+  message           String
+  attachments       String?
+  uploadedFiles     String?
+  newsletterSubscribed Boolean @default(false)
+  status            SubmissionStatus @default(NEW)
+  priority          Priority @default(MEDIUM)
+  assignedTo        String?
+  ipAddress         String?
+  userAgent         String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  // Relations
+  fileAttachments   FileAttachment[]
+  analytics         ContactFormAnalytics[]
+  
+  @@map("contact_submissions")
+}
+
+model FileAttachment {
+  id             String   @id @default(uuid())
+  submissionId   String
+  fileName       String
+  filePath       String
+  fileSize       BigInt
+  fileType       String?
+  fileCategory   FileCategory
+  folderPath     String?
+  uploadedAt     DateTime @default(now())
+  
+  // Relations
+  submission     ContactSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  
+  @@map("file_attachments")
+}
+
+model ServiceCategory {
+  id            String   @id @default(uuid())
+  name          String   @unique
+  description   String?
+  isActive      Boolean  @default(true)
+  displayOrder  Int      @default(0)
+  createdAt     DateTime @default(now())
+  
+  // Relations
+  projectTypes  ProjectType[]
+  
+  @@map("service_categories")
+}
+
+model ProjectType {
+  id                String   @id @default(uuid())
+  categoryId        String?
+  name              String
+  description       String?
+  estimatedDuration String?
+  complexityLevel   ComplexityLevel @default(MEDIUM)
+  isActive          Boolean  @default(true)
+  displayOrder      Int      @default(0)
+  createdAt         DateTime @default(now())
+  
+  // Relations
+  category          ServiceCategory? @relation(fields: [categoryId], references: [id])
+  
+  @@map("project_types")
+}
+
+model TimelineOption {
+  id            String   @id @default(uuid())
+  value         String   @unique
+  displayName   String
+  daysEstimate  Int?
+  isActive      Boolean  @default(true)
+  displayOrder  Int      @default(0)
+  
+  @@map("timeline_options")
+}
+
+model ContactFormAnalytics {
+  id                String   @id @default(uuid())
+  submissionId      String?
+  pageUrl           String?
+  referrer          String?
+  sessionDuration   Int?     // in seconds
+  formFillTime      Int?     // in seconds
+  formAbandoned     Boolean  @default(false)
+  abandonedAtStep   String?
+  createdAt         DateTime @default(now())
+  
+  // Relations
+  submission        ContactSubmission? @relation(fields: [submissionId], references: [id])
+  
+  @@map("contact_form_analytics")
+}
+
+enum SubmissionStatus {
+  NEW
+  REVIEWING
+  CONTACTED
+  PROPOSAL_SENT
+  NEGOTIATING
+  CONVERTED
+  LOST
+  SPAM
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum FileCategory {
+  INDIVIDUAL
+  FOLDER
+}
+
+enum ComplexityLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
