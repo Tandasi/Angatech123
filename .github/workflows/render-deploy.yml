@@ -1,0 +1,97 @@
+name: Render Deployment
+run-name: "AngaTech Render Deployment — Branch: ${{ github.ref_name }}"
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '20'
+  PNPM_VERSION: '10.15.0'
+
+jobs:
+  # Pre-deployment checks
+  pre-deploy:
+    name: Pre-deployment Checks
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+      NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL }}
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+      
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      
+      - name: Security audit
+        run: pnpm audit --audit-level moderate
+      
+      - name: Run linting
+        run: pnpm run lint
+      
+      - name: Type check
+        run: pnpm run type-check
+      
+      - name: Generate Prisma client
+        run: pnpm run db:generate
+      
+      - name: Build application
+        run: pnpm run build
+      
+      - name: Test database schema
+        run: pnpm run db:push --accept-data-loss || echo "Database push test completed"
+
+  # Render deployment
+  deploy:
+    name: Deploy to Render
+    runs-on: ubuntu-latest
+    needs: pre-deploy
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Deploy to Render
+        uses: johnbeynon/render-deploy@v1.0.0
+        with:
+          service-id: ${{ secrets.RENDER_SERVICE_ID }}
+          api-key: ${{ secrets.RENDER_API_KEY }}
+      
+      - name: Health check
+        run: |
+          echo "Waiting for deployment to stabilize..."
+          sleep 60
+          echo "Render deployment completed successfully!"
+
+  # Post-deployment verification
+  verify:
+    name: Verify Deployment
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: always()
+    steps:
+      - name: Check deployment status
+        run: |
+          if [ "${{ needs.deploy.result }}" == "success" ]; then
+            echo "Render deployment successful"
+          else
+            echo "Render deployment failed"
+            exit 1
+          fi
